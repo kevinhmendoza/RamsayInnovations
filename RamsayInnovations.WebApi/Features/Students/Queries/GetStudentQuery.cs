@@ -28,11 +28,11 @@ namespace RamsayInnovations.WebApi.Features.Students.Queries
         public async Task<GetStudentQueryResponse> Handle(GetStudentQuery request, CancellationToken cancellationToken)
         {
             var student = await _unitOfWork.StudentRepository.FindAsync(request.StudentId);
-            var studentDto = _mapper.Map<StudentDto>(student);
             if (student == null)
             {
                 return new GetStudentQueryResponse($"El id {request.StudentId} del estudiante no existe en la BD");
             }
+            var studentDto = _mapper.Map<StudentDto>(student);         
             return new GetStudentQueryResponse(studentDto);
 
         }

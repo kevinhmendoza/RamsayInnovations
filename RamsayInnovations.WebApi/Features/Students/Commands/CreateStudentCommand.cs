@@ -1,6 +1,11 @@
 ﻿using AutoMapper;
+using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
+using RamsayInnovations.Domain;
 using RamsayInnovations.Domain.SeedWorks;
+using RamsayInnovations.WebApi.Extensions;
+using RamsayInnovations.WebApi.Mappers.StudentMap;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace RamsayInnovations.WebApi.Features.Students.Commands
 {
-  
+
     public class CreateStudentCommand : IRequest<CreateStudentCommandResponse>
     {
         public string Username { get; set; }
@@ -21,24 +26,31 @@ namespace RamsayInnovations.WebApi.Features.Students.Commands
 
     public class CreateStudentCommandHandler : IRequestHandler<CreateStudentCommand, CreateStudentCommandResponse>
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public CreateStudentCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly CreateStudentCommandValidator _validator;
+        public CreateStudentCommandHandler(IValidator<CreateStudentCommand> validator, IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _validator = validator as CreateStudentCommandValidator;
         }
         public async Task<CreateStudentCommandResponse> Handle(CreateStudentCommand request, CancellationToken cancellationToken)
         {
-            var student = _mapper.Map<Student>(studentDto);
-            _unitOfWork.StudentRepository.Add(student);
-            var student = await _unitOfWork.StudentRepository.FindAsync(request.StudentId);
-        
-            if (student == null)
+            var validationResult = _validator.Validate(request);
+            if (!validationResult.IsValid) return new CreateStudentCommandResponse(validationResult);
+
+            var student = _validator.UnitOfWork.StudentRepository.Add(new Student
             {
-                return new CreateStudentCommandResponse($"El id {request.StudentId} del estudiante no existe en la BD");
-            }
-            return new CreateStudentCommandResponse(studentDto);
+                Username = request.Username,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Age = request.Age,
+                Career = request.Career
+            });
+
+            await _validator.UnitOfWork.Commit();
+            var studentDto = _mapper.Map<StudentDto>(student);
+
+            return new CreateStudentCommandResponse(validationResult, studentDto);
 
         }
     }
@@ -46,16 +58,51 @@ namespace RamsayInnovations.WebApi.Features.Students.Commands
     public class CreateStudentCommandResponse
     {
         public StudentDto Student { get; set; }
-        public string Message { get; set; }
-        public CreateStudentCommandResponse(StudentDto studentDto)
+        private ValidationResult ValidationResult { get; }
+        public string Mensaje { get; set; }
+        public bool IsValid => ValidationResult.IsValid;
+
+        public CreateStudentCommandResponse(ValidationResult validationResult, StudentDto studentDto = null)
         {
+            ValidationResult = validationResult;
             Student = studentDto;
+            if (!ValidationResult.IsValid)
+            {
+                Mensaje = ValidationResult.ToText();
+            }
+            else
+            {
+                Mensaje = $"Operación realizada satisfactoriamente.";
+            }
         }
 
-        public CreateStudentCommandResponse(string message)
+
+
+    }
+
+    public class CreateStudentCommandValidator : AbstractValidator<CreateStudentCommand>
+    {
+        public IUnitOfWork UnitOfWork { get; set; }
+
+        public CreateStudentCommandValidator(IUnitOfWork unitOfWork)
         {
-            Message = message;
+            UnitOfWork = unitOfWork;
+            RuleFor(t => t.Username).NotNull().NotEmpty().WithMessage("Debe enviar el UserName del estudiante a registrar!");
+
+
+            When(t => !string.IsNullOrEmpty(t.Username), () =>
+            {
+                RuleFor(r => r).Must(ExisteUserName).WithMessage(t => $"Ya existe el usuario [{t.Username}] del estudiante a registrar ");
+            });
         }
+
+        private bool ExisteUserName(CreateStudentCommand request)
+        {
+            var existeUserName = UnitOfWork.StudentRepository.Any(t => t.Username == request.Username);
+            return !existeUserName;
+        }
+
+
 
     }
 }

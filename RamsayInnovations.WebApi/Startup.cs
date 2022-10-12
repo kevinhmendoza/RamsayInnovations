@@ -1,3 +1,4 @@
+using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,6 +30,7 @@ namespace RamsayInnovations.WebApi
             services.AddDbContext<Sample_DBContext>(options => options.UseSqlite(Configuration.GetConnectionString("sample_DBContext")));
             services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSwaggerGen();
        

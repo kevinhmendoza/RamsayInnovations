@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using RamsayInnovations.Domain;
 using RamsayInnovations.Domain.SeedWorks;
 using RamsayInnovations.Infrastructure;
+using RamsayInnovations.WebApi.Features.Students.Commands;
 using RamsayInnovations.WebApi.Features.Students.Queries;
 using RamsayInnovations.WebApi.Mappers.StudentMap;
 
@@ -16,14 +17,10 @@ namespace RamsayInnovations.WebApi.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
         private readonly IMediator _mediator;
 
-        public StudentsController(IMapper mapper, IUnitOfWork unitOfWork, IMediator mediator)
+        public StudentsController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
             _mediator = mediator;
         }
 
@@ -32,7 +29,7 @@ namespace RamsayInnovations.WebApi.Controllers
         public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudents()
         {
             var response = await _mediator.Send(new GetStudentsQuery());
-            return response.Students;
+            return Ok(response.Students);
         }
 
         // GET: api/Students/5
@@ -44,92 +41,57 @@ namespace RamsayInnovations.WebApi.Controllers
             {
                 return NotFound(response.Message);
             }
-            return response.Student;
+            return Ok(response.Student);
         }
 
         // PUT: api/Students/5
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutStudent(long id, Student student)
+        public async Task<IActionResult> PutStudent(long id, UpdateStudentCommand request)
         {
-            if (!StudentExists(id))
-            {
-                return NotFound($"El id {id} del estudiante no existe en la BD");
-            }
-
-            if (id != student.Id)
+            if (id != request.Id)
             {
                 return BadRequest("El id del estudiante no coincide con el id de la URL");
             }
 
-            _unitOfWork.StudentRepository.Edit(student);
-
-            try
+            var response = await _mediator.Send(request);
+            if (response.IsValid)
             {
-                await _unitOfWork.Commit();
+                return Ok(response);
             }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                string message = DynamicException.Formatted(ex);
-                return BadRequest(message);
-            }
+            else return BadRequest(response.Mensaje);
 
-            return Ok("El estudiante se modifico exitosamente");
+
         }
 
         // POST: api/Students
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPost]
-        public async Task<ActionResult<Student>> PostStudent(StudentDto studentDto)
+        public async Task<ActionResult<Student>> PostStudent(CreateStudentCommand request)
         {
-
-            var student = _mapper.Map<Student>(studentDto);
-            try
+            var response = await _mediator.Send(request);
+            if (response.IsValid)
             {
-
-                _unitOfWork.StudentRepository.Add(student);
-                await _unitOfWork.Commit();
+                return Ok(response);
             }
-            catch (DbUpdateException ex)
-            {
-                string message = DynamicException.Formatted(ex);
-                return BadRequest(message);
-            }
-
-            return CreatedAtAction("GetStudent", new { id = student.Id }, student);
+            else return BadRequest(response.Mensaje);
         }
 
         // DELETE: api/Students/5
         [HttpDelete("{id}")]
         public async Task<ActionResult<Student>> DeleteStudent(long id)
         {
-            var student = await _unitOfWork.StudentRepository.FindAsync(id);
-            if (student == null)
+            var response = await _mediator.Send(new DeleteStudentCommand { Id = id });
+            if (response.IsValid)
             {
-                return NotFound($"El id {id} del estudiante no existe en la BD");
+                return Ok(response);
             }
-
-            try
-            {
-                _unitOfWork.StudentRepository.Delete(student);
-                await _unitOfWork.Commit();
-            }
-            catch (DbUpdateException ex)
-            {
-                string message = DynamicException.Formatted(ex);
-                return BadRequest(message);
-            }
-
-
-            return Ok($"El estudiante fue elminado exitosamente");
+            else return BadRequest(response.Mensaje);
         }
 
-        private bool StudentExists(long id)
-        {
-            return _unitOfWork.StudentRepository.Any(e => e.Id == id);
-        }
+
 
     }
 

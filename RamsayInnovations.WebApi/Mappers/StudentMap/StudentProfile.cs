@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using RamsayInnovations.Domain;
+using RamsayInnovations.WebApi.Features.Students.Commands;
 using RamsayInnovations.WebApi.Mappers.StudentMap;
 
 namespace RamsayInnovations.WebApi.Mappers
@@ -10,6 +11,8 @@ namespace RamsayInnovations.WebApi.Mappers
         {
             CreateMap<StudentDto, Student>();
             CreateMap<Student, StudentDto>();
+            CreateMap<UpdateStudentCommand, Student>();
+
         }
     }
 }
