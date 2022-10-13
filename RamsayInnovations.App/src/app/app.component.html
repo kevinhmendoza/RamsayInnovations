@@ -1,0 +1,61 @@
+<div class="container">
+  <div class="row">
+    <div class="col-md-12 mt-4">
+      <h1 class="text-center">Student List</h1>
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="text-center">ID</th>
+            <th class="text-center">User Name</th>
+            <th class="text-center">First Name</th>
+            <th class="text-center">Last Name</th>
+            <th class="text-center">Age</th>
+            <th class="text-center">Career</th>
+            <th class="text-center">&nbsp;</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let student of students">
+            <td>{{ student.id }}</td>
+            <td>{{ student.username }}</td>
+            <td>{{ student.firstName }}</td>
+            <td>{{ student.lastName }}</td>
+            <td>{{ student.age }}</td>
+            <td>{{ student.career }}</td>
+            <td>
+              <button type="button" class="btn btn-info btn-sm mr-2" (click)="showEditStudentForm(student)">Edit</button>
+              <button type="button" class="btn btn-danger btn-sm" (click)="removeStudent(student)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <button class="btn btn-success" (click)="showAddStudentForm()">Add New Student</button>
+
+      <div class="mt-4">
+        <form *ngIf="studentForm">
+          <h2>Add New Student</h2>
+          <p>User Name: <input type="text" name="username" [(ngModel)]="newStudent.username" /></p>
+          <p>First Name: <input type="text" name="firstName" [(ngModel)]="newStudent.firstName" /></p>
+          <p>Last Name: <input type="text" name="lastName" [(ngModel)]="newStudent.lastName" /></p>
+          <p>Age: <input type="number" name="age" [(ngModel)]="newStudent.age" /></p>
+          <p>Career: <input type="text" name="career" [(ngModel)]="newStudent.career" /></p>
+
+          <p>
+            <button type="button" class="btn btn-primary mr-2" (click)="saveStudent(newStudent)">Submit</button>
+            <button type="button" class="btn btn-warning" (click)="cancelNewStudent()">Cancel</button>
+          </p>
+        </form>
+
+        <form *ngIf="editStudentForm">
+          <h2>Edit Student Details</h2>
+          <p>First Name: <input type="text" name="firstName" [(ngModel)]="editedStudent.firstName" /></p>
+          <p>Last Name: <input type="text" name="lastName" [(ngModel)]="editedStudent.lastName" /></p>
+          <p>
+            <button type="button" class="btn btn-primary mr-2" (click)="updateStudent()">Submit</button>
+            <button type="button" class="btn btn-warning" (click)="cancelEdits()">Cancel</button>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
