@@ -33,14 +33,24 @@ namespace RamsayInnovations.WebApi
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddSwaggerGen();
-       
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy(
+                  "CorsPolicy",
+                  builder => builder.WithOrigins("http://localhost:4200")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials());
+            });
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseCors("CorsPolicy");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -48,7 +58,9 @@ namespace RamsayInnovations.WebApi
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+          
+
+            app.UseHttpsRedirection();         
 
             app.UseRouting();
 
